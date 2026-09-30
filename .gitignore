@@ -8,9 +8,6 @@ dist/
 build/
 out/
 
-# Archivos de compilación / ejecución
-
-object/
 
 # Logs
 
