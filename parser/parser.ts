@@ -1,7 +1,8 @@
-// src/parser/index.ts
-import { Lexer } from "../lexer/lexer";
-import { Token, TokenType, TokenTypes } from "../token/token";
+//parser/index.ts
+import { Lexer } from "../lexer/lexer.ts";
+import { Token, TokenType, TokenTypes } from "../token/token.ts";
 import {
+  AssignExpression,
   BlockStatement,
   BooleanLiteral,
   CallExpression,
@@ -24,6 +25,7 @@ import {
 // Mayor número = se agrupa primero
 enum Precedence {
   LOWEST = 1,
+  ASSIGN, // =
   EQUALS, // == !=
   LESSGREATER, // < > <= >=
   SUM, // + -
@@ -34,6 +36,7 @@ enum Precedence {
 }
 
 const precedences = new Map<TokenType, Precedence>([
+  [TokenTypes.ASSIGN, Precedence.ASSIGN],
   [TokenTypes.EQ, Precedence.EQUALS],
   [TokenTypes.NOT_EQ, Precedence.EQUALS],
   [TokenTypes.LT, Precedence.LESSGREATER],
@@ -62,6 +65,8 @@ export class Parser {
 
   constructor(private readonly lexer: Lexer) {
     // Funciones prefix (token al INICIO de una expresión)
+    this.registerInfix(TokenTypes.LPAREN, this.parseCallExpression.bind(this));
+this.registerInfix(TokenTypes.ASSIGN, this.parseAssignExpression.bind(this));
     this.registerPrefix(TokenTypes.IDENT, this.parseIdentifier.bind(this));
     this.registerPrefix(TokenTypes.INT, this.parseIntegerLiteral.bind(this));
     this.registerPrefix(TokenTypes.BANG, this.parsePrefixExpression.bind(this));
@@ -356,16 +361,18 @@ export class Parser {
   // Funciones infix
   // ===========================================================================
 
-  private parseInfixExpression(left: Expression): Expression {
-    const token = this.curToken;
-    const operator = token.literal;
-    const precedence = this.curPrecedence();
+private parseInfixExpression(left: Expression): Expression {
+  const token = this.curToken;
+  const operator = token.literal;
+  const precedence = this.curPrecedence();
 
-    this.nextToken();
-    const right = this.parseExpression(precedence);
+  this.nextToken();
+  // ** es asociativo a la derecha: bajamos un nivel para que el siguiente ** se agrupe dentro
+  const rightPrec = operator === "**" ? precedence - 1 : precedence;
+  const right = this.parseExpression(rightPrec);
 
-    return new InfixExpression(token, left, operator, right);
-  }
+  return new InfixExpression(token, left, operator, right);
+}
 
   private parseCallExpression(func: Expression): Expression | null {
     const token = this.curToken; // "("
@@ -448,4 +455,17 @@ export class Parser {
   private curPrecedence(): Precedence {
     return precedences.get(this.curToken.type) ?? Precedence.LOWEST;
   }
+
+  // método nuevo:
+private parseAssignExpression(left: Expression): Expression | null {
+  if (!(left instanceof Identifier)) {
+    this.errors.push(`El lado izquierdo de "=" debe ser un identificador, se obtuvo ${left}`);
+    return null;
+  }
+  const token = this.curToken; // "="
+  this.nextToken();
+  // Parseamos con LOWEST para que sea asociativo a la derecha: a = b = 3
+  const value = this.parseExpression(Precedence.LOWEST);
+  return new AssignExpression(token, left, value);
+}
 }

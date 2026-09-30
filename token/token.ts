@@ -1,4 +1,4 @@
-// src/token/index.ts
+//token/index.ts
 
 export const TokenTypes = {
   // Especiales

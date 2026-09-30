@@ -1,9 +1,9 @@
-// src/repl/index.ts
+//repl/index.ts
 declare const require: (id: string) => any;
 declare const process: any;
 const readline = require("readline");
-import { Lexer } from "../lexer/lexer";
-import { Parser } from "../parser/parser";
+import { Lexer } from "../lexer/lexer.ts";
+import { Parser } from "../parser/parser.ts";
 
 const PROMPT = ">> ";
 

@@ -1,4 +1,4 @@
-import { Token } from "../token/token";
+import { Token } from "../token/token.ts";
 
 // ---------- Interfaces base ----------
 export interface Node {
@@ -99,6 +99,19 @@ export class BooleanLiteral implements Expression {
 }
 
 // ---------- Operadores ----------
+export class InfixExpression implements Expression {
+  readonly kind = "expression" as const;
+  constructor(
+    public token: Token,
+    public left: Expression,
+    public operator: string,
+    public right: Expression | null = null
+  ) {}
+
+  tokenLiteral() { return this.token.literal; }
+  toString() { return `(${this.left} ${this.operator} ${this.right})`; }
+}
+
 export class PrefixExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
@@ -111,17 +124,16 @@ export class PrefixExpression implements Expression {
   toString() { return `(${this.operator}${this.right})`; }
 }
 
-export class InfixExpression implements Expression {
+export class AssignExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
     public token: Token,
-    public left: Expression,
-    public operator: string,
-    public right: Expression | null = null
+    public name: Identifier,
+    public value: Expression | null = null
   ) {}
 
   tokenLiteral() { return this.token.literal; }
-  toString() { return `(${this.left} ${this.operator} ${this.right})`; }
+  toString() { return `(${this.name} = ${this.value})`; }
 }
 
 // ---------- Control de flujo ----------
@@ -137,7 +149,7 @@ export class IfExpression implements Expression {
   tokenLiteral() { return this.token.literal; }
   toString() {
     let out = `if${this.condition} ${this.consequence}`;
-    if (this.alternative) out += `else ${this.alternative}`;
+    if (this.alternative) out += ` else ${this.alternative}`;
     return out;
   }
 }

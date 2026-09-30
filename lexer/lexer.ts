@@ -1,5 +1,5 @@
-// src/lexer/index.ts
-import { Token, TokenType, TokenTypes, lookupIdent } from "../token/token";
+//lexer/index.ts
+import { Token, TokenType, TokenTypes, lookupIdent } from "../token/token.ts";
 
 // En Go el fin de entrada se marcaba con el byte 0.
 // En TS usamos la cadena vacía, que nunca coincide con un carácter real.
@@ -137,7 +137,9 @@ export class Lexer {
 
   private readIdentifier(): string {
     const start = this.position;
-    while (isLetter(this.ch)) this.readChar();
+    while (isLetter(this.ch) || isDigit(this.ch)) {
+      this.readChar();
+    }
     return this.input.slice(start, this.position);
   }
 
