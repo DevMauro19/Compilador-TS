@@ -4,6 +4,8 @@ declare const process: any;
 const readline = require("readline");
 import { Lexer } from "../lexer/lexer.ts";
 import { Parser } from "../parser/parser.ts";
+import { Eval } from "../evaluator/evaluator.ts";
+import { Environment } from "../object/object.ts";
 
 const PROMPT = ">> ";
 
@@ -14,6 +16,7 @@ export function start(): void {
     prompt: PROMPT,
   });
 
+  const env = new Environment();
   rl.prompt();
 
   rl.on("line", (line: string) => {
@@ -25,7 +28,10 @@ export function start(): void {
       console.log("Errores de parseo:");
       parser.errors.forEach((e) => console.log("\t" + e));
     } else {
-      console.log(program.toString());
+      const result = Eval(program, env);
+      if (result !== null) {
+        console.log(result.inspect());
+      }
     }
 
     rl.prompt();

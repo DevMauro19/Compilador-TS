@@ -8,6 +8,7 @@ export const TokenTypes = {
   // Identificadores y literales
   IDENT: "IDENT",
   INT: "INT",
+  STRING: "STRING",
 
   // Operadores
   ASSIGN: "=",
@@ -27,6 +28,7 @@ export const TokenTypes = {
   // Delimitadores
   COMMA: ",",
   SEMICOLON: ";",
+  COLON: ":",
   LPAREN: "(",
   RPAREN: ")",
   LBRACE: "{",

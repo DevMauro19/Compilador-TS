@@ -98,6 +98,34 @@ export class BooleanLiteral implements Expression {
   toString() { return this.token.literal; }
 }
 
+export class StringLiteral implements Expression {
+  readonly kind = "expression" as const;
+  constructor(public token: Token, public value: string) {}
+
+  tokenLiteral() { return this.token.literal; }
+  toString() { return `"${this.value}"`; }
+}
+
+export class ArrayLiteral implements Expression {
+  readonly kind = "expression" as const;
+  constructor(public token: Token, public elements: Expression[] = []) {}
+
+  tokenLiteral() { return this.token.literal; }
+  toString() { return `[${this.elements.map((e) => e.toString()).join(", ")}]`; }
+}
+
+export class HashLiteral implements Expression {
+  readonly kind = "expression" as const;
+  constructor(public token: Token, public pairs: Array<[Expression, Expression]> = []) {}
+
+  tokenLiteral() { return this.token.literal; }
+  toString() {
+    return `{${this.pairs
+      .map(([key, value]) => `${key.toString()}: ${value.toString()}`)
+      .join(", ")}}`;
+  }
+}
+
 // ---------- Operadores ----------
 export class InfixExpression implements Expression {
   readonly kind = "expression" as const;
@@ -134,6 +162,18 @@ export class AssignExpression implements Expression {
 
   tokenLiteral() { return this.token.literal; }
   toString() { return `(${this.name} = ${this.value})`; }
+}
+
+export class IndexExpression implements Expression {
+  readonly kind = "expression" as const;
+  constructor(
+    public token: Token,
+    public left: Expression,
+    public index: Expression
+  ) {}
+
+  tokenLiteral() { return this.token.literal; }
+  toString() { return `(${this.left}[${this.index}])`; }
 }
 
 // ---------- Control de flujo ----------

@@ -1,28 +1,37 @@
 # 🧠 AgenteTs
 
-> **Un intérprete en desarrollo escrito completamente en TypeScript.**
+> **Intérprete educativo escrito en TypeScript con lexer, parser, AST y evaluator funcional.**
 
-AgenteTs es un proyecto educativo orientado a explorar cómo funciona un lenguaje de programación desde sus componentes fundamentales: **lexer → parser → AST → evaluación**.
+AgenteTs es un proyecto orientado a comprender cómo funciona un lenguaje de programación desde sus piezas fundamentales: **lexer → parser → AST → evaluador → salida/error**.
 
-Actualmente, el proyecto permite tomar código fuente, analizarlo sintácticamente y construir su **Árbol de Sintaxis Abstracta (AST)** mediante un **parser Pratt**. La evaluación del código todavía se encuentra en desarrollo.
+El proyecto ya incluye evaluación de expresiones, asignación, funciones, condicionales, bucles, arreglos, hashes, acceso por índice y builtins como `len`, `first`, `last`, `rest`, `push` y `print`.
 
 ---
 
-## 🚧 Estado del proyecto
+## ✅ Estado del proyecto
 
-**AgenteTs se encuentra actualmente en desarrollo.**
+| Componente            | Estado         |
+| --------------------- | -------------- |
+| 🔤 Lexer              | ✅ Implementado |
+| 🌳 AST                | ✅ Implementado |
+| 🧩 Parser Pratt       | ✅ Implementado |
+| ⚙️ Evaluador          | ✅ Implementado |
+| 📦 Objetos / Entornos | ✅ Implementado |
+| 💻 REPL               | ✅ Implementado |
+| 🧪 Tests              | ✅ Implementado |
+| 📚 Documentación      | ✅ Implementado |
 
-| Componente            | Estado           |
-| --------------------- | ---------------- |
-| 🔤 Lexer              | ✅ Implementado   |
-| 🌳 AST                | ✅ Implementado   |
-| 🧩 Parser Pratt       | ✅ Implementado   |
-| 💻 REPL               | ✅ Implementado   |
-| 📦 Objetos / Entornos | 🚧 En desarrollo |
-| ⚙️ Evaluador          | ⏳ Pendiente      |
-| 🧪 Tests              | 🚧 En desarrollo |
+El interprete puede leer instrucciones, analizarlas, ejecutarlas y devolver resultados o errores con mensajes claros.
 
-El objetivo final es convertir AgenteTs en un pequeño lenguaje interpretado capaz de **leer, analizar y ejecutar código**.
+## ▶️ Cómo ejecutar
+
+```bash
+npm install
+npm test
+npm start
+```
+
+El comando `npm start` abre el REPL del lenguaje y permite probar expresiones en tiempo real.
 
 ---
 

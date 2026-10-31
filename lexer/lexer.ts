@@ -36,6 +36,49 @@ export class Lexer {
     return { type, literal: first + this.ch };
   }
 
+  private readString(): string {
+    // Avanzamos el primer " o ' y leemos hasta cerrar la cadena.
+    const quote = this.ch;
+    this.readChar();
+
+    let value = "";
+    let current = this.ch;
+
+    while (current !== EOF_CHAR && current !== quote) {
+      if (current === "\\") {
+        this.readChar();
+        current = this.ch;
+        if (current === EOF_CHAR) break;
+
+        if (current === "n") {
+          value += "\n";
+        } else if (current === "t") {
+          value += "\t";
+        } else if (current === "\\") {
+          value += "\\";
+        } else if (current === '"') {
+          value += '"';
+        } else if (current === "'") {
+          value += "'";
+        } else {
+          value += current;
+        }
+      } else {
+        value += current;
+      }
+
+      this.readChar();
+      current = this.ch;
+    }
+
+    if (this.ch !== quote) {
+      return value;
+    }
+
+    this.readChar();
+    return value;
+  }
+
   nextToken(): Token {
     let tok: Token;
 
@@ -87,6 +130,9 @@ export class Lexer {
       case ",":
         tok = newToken(TokenTypes.COMMA, this.ch);
         break;
+      case ":":
+        tok = newToken(TokenTypes.COLON, this.ch);
+        break;
       case "{":
         tok = newToken(TokenTypes.LBRACE, this.ch);
         break;
@@ -105,13 +151,14 @@ export class Lexer {
       case "]":
         tok = newToken(TokenTypes.RBRACKET, this.ch);
         break;
+      case '"':
+      case "'":
+        return { type: TokenTypes.STRING, literal: this.readString() };
       case EOF_CHAR:
         tok = { type: TokenTypes.EOF, literal: "" };
         break;
       default:
         if (isLetter(this.ch)) {
-          // readIdentifier ya deja el puntero en el siguiente carácter,
-          // por eso retornamos sin llamar a readChar()
           const literal = this.readIdentifier();
           return { type: lookupIdent(literal), literal };
         } else if (isDigit(this.ch)) {

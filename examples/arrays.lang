@@ -1,0 +1,4 @@
+let numbers = [10, 20, 30, 40];
+print(numbers[1]);
+print(len(numbers));
+print(push(numbers, 50));

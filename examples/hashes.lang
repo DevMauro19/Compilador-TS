@@ -1,0 +1,3 @@
+let user = {"name": "Ana", "active": true};
+print(user["name"]);
+print(user["active"]);
