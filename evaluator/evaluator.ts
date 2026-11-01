@@ -1,12 +1,12 @@
 // evaluator/evaluator.ts
-// Este módulo traduce el AST del lenguaje a valores ejecutables del entorno.
-// La idea es la misma que en el evaluator.go original: cada nodo devuelve un
-// objeto del lenguaje (Integer, Bool, Error, ReturnValue, etc.) y se propagan
-// los errores y los retornos sin seguir ejecutando el resto del bloque.
+// Evaluador: recorre el AST y ejecuta el programa (intérprete de recorrido de árbol).
+// Cada nodo devuelve un objeto de ChoomScript (Integer, Bool, ErrorObj, ReturnValue...).
+// La idea es la misma que en el evaluator.go original: los errores y los retornos
+// se propagan hacia arriba sin seguir ejecutando el resto del bloque.
 
 import {
   type Expression,
-  type Node,
+  type Statement,
   ArrayLiteral,
   AssignExpression,
   BlockStatement,
@@ -40,21 +40,28 @@ import {
   Integer,
   LangObject,
   NULL,
-  Null,
-  ObjectTypes,
   ReturnValue,
   StringObj,
   TRUE,
+  isHashable,
 } from "../object/object.ts";
+import { builtins } from "./builtins.ts";
+
+type AstNode = Program | Statement | Expression;
 
 // Punto de entrada para evaluar cualquier nodo del AST.
-// Si el valor recibido es un nodo completo del programa, se reduce a su último
-// resultado en ejecución (o al primer error/return encontrado).
-export function Eval(node: Node | null, env: Environment): LangObject {
-  if (node === null) {
-    return new ErrorObj("nodo incompleto del AST");
-  }
+export function Eval(node: AstNode, env: Environment): LangObject {
+  const result = evalNode(node, env);
 
+  // El primer nodo que ve un error sin posición (el más interno, donde se originó)
+  // le asigna su token; así el mensaje apunta a la operación que falló.
+  if (result instanceof ErrorObj && result.token === null && !(node instanceof Program)) {
+    return new ErrorObj(result.message, node.token);
+  }
+  return result;
+}
+
+function evalNode(node: AstNode, env: Environment): LangObject {
   if (node instanceof Program) {
     return evalProgram(node.statements, env);
   }
@@ -109,11 +116,12 @@ export function Eval(node: Node | null, env: Environment): LangObject {
   }
 
   if (node instanceof Identifier) {
-    const value = env.get(node.value);
+    // Primero los ámbitos del programa (de adentro hacia afuera) y luego las integradas.
+    const value = env.get(node.value) ?? builtins.get(node.value);
     if (value !== undefined) {
       return value;
     }
-    return new ErrorObj(`identificador no definido: ${node.value}`);
+    return new ErrorObj(`'${node.value}' no está definido (¿olvidaste declararlo con choom?)`);
   }
 
   if (node instanceof PrefixExpression) {
@@ -125,6 +133,10 @@ export function Eval(node: Node | null, env: Environment): LangObject {
   }
 
   if (node instanceof InfixExpression) {
+    if (node.operator === "&&" || node.operator === "||") {
+      return evalLogical(node, env);
+    }
+
     const left = Eval(node.left, env);
     if (isError(left)) {
       return left;
@@ -160,14 +172,21 @@ export function Eval(node: Node | null, env: Environment): LangObject {
   }
 
   if (node instanceof WhileExpression) {
-    return evalWhile(node, env);
+    return evalLoop(node.condition, node.body, null, env);
   }
 
   if (node instanceof ForExpression) {
-    return evalFor(node, env);
+    // La inicialización corre una sola vez, en el mismo ámbito que el resto del código:
+    // en ChoomScript solo los quickhacks crean un ámbito nuevo.
+    const init = Eval(node.init, env);
+    if (isError(init)) {
+      return init;
+    }
+    return evalLoop(node.condition, node.body, node.update, env);
   }
 
   if (node instanceof FunctionLiteral) {
+    // Se captura env: el entorno donde se DEFINE el quickhack (base de los closures).
     return new FunctionObj(node.parameters, node.body, env);
   }
 
@@ -182,7 +201,7 @@ export function Eval(node: Node | null, env: Environment): LangObject {
       return args;
     }
 
-    return applyFunction(fn, args);
+    return applyFunction(fn, args, node.func.toString());
   }
 
   if (node instanceof IndexExpression) {
@@ -202,7 +221,8 @@ export function Eval(node: Node | null, env: Environment): LangObject {
   return new ErrorObj(`nodo no soportado: ${node.constructor.name}`);
 }
 
-function evalProgram(statements: any[], env: Environment): LangObject {
+// A nivel de programa un "delta" termina la ejecución: se desenvuelve su valor.
+function evalProgram(statements: Statement[], env: Environment): LangObject {
   let result: LangObject = NULL;
 
   for (const statement of statements) {
@@ -220,7 +240,9 @@ function evalProgram(statements: any[], env: Environment): LangObject {
   return result;
 }
 
-function evalBlock(statements: any[], env: Environment): LangObject {
+// Dentro de un bloque el ReturnValue NO se desenvuelve: tiene que seguir subiendo
+// (por ejemplo desde un scan anidado) hasta llegar al quickhack que lo llamó.
+function evalBlock(statements: Statement[], env: Environment): LangObject {
   let result: LangObject = NULL;
 
   for (const statement of statements) {
@@ -234,8 +256,8 @@ function evalBlock(statements: any[], env: Environment): LangObject {
   return result;
 }
 
-// En este intérprete, sólo false y null son falsy.
-// Los valores 0, "" y los objetos vacíos se comportan como verdaderos.
+// En ChoomScript solo offline y null son "falsos".
+// Los valores 0, "" y los arreglos vacíos se comportan como verdaderos.
 function truthy(value: LangObject): boolean {
   if (value === NULL) {
     return false;
@@ -252,23 +274,40 @@ function evalPrefix(operator: string, right: LangObject): LangObject {
   switch (operator) {
     case "!":
       return truthy(right) ? FALSE : TRUE;
-    case "-": {
+    case "-":
       if (!(right instanceof Integer)) {
-        return new ErrorObj(`operador - no admite ${right.type()}`);
+        return new ErrorObj(`el operador '-' no se puede aplicar a ${right.type()}`);
       }
-
-      if (!Number.isSafeInteger(-right.value)) {
-        return new ErrorObj(`desbordamiento al negar ${right.value}`);
-      }
-
-      return new Integer(-right.value);
-    }
+      return checkedInteger(-right.value);
     default:
       return new ErrorObj(`operador prefijo desconocido: ${operator}`);
   }
 }
 
+// && y || con cortocircuito: si el lado izquierdo ya decide el resultado,
+// el derecho ni se evalúa (offline && x nunca evalúa x). Siempre devuelven online/offline.
+function evalLogical(node: InfixExpression, env: Environment): LangObject {
+  const left = Eval(node.left, env);
+  if (isError(left)) {
+    return left;
+  }
+
+  if (node.operator === "&&" && !truthy(left)) {
+    return FALSE;
+  }
+  if (node.operator === "||" && truthy(left)) {
+    return TRUE;
+  }
+
+  const right = Eval(node.right, env);
+  if (isError(right)) {
+    return right;
+  }
+  return truthy(right) ? TRUE : FALSE;
+}
+
 function evalInfix(operator: string, left: LangObject, right: LangObject): LangObject {
+  // No hay conversiones implícitas: 1 + "1" es un error (para eso están str() e int()).
   if (left.type() !== right.type()) {
     return new ErrorObj(`tipos incompatibles: ${left.type()} ${operator} ${right.type()}`);
   }
@@ -285,6 +324,7 @@ function evalInfix(operator: string, left: LangObject, right: LangObject): LangO
         if (right.value === 0) {
           return new ErrorObj("división por cero");
         }
+        // División entera: se descarta la parte decimal (7 / 2 = 3, -7 / 2 = -3).
         return checkedInteger(Math.trunc(left.value / right.value));
       case "%":
         if (right.value === 0) {
@@ -293,12 +333,9 @@ function evalInfix(operator: string, left: LangObject, right: LangObject): LangO
         return checkedInteger(left.value % right.value);
       case "**":
         if (right.value < 0) {
-          return new ErrorObj(`exponente negativo: ${right.value}`);
+          return new ErrorObj(`exponente negativo (${right.value}): ChoomScript solo maneja enteros`);
         }
-        if (!Number.isSafeInteger(Math.pow(left.value, right.value))) {
-          return new ErrorObj("desbordamiento de entero");
-        }
-        return checkedInteger(Math.pow(left.value, right.value));
+        return checkedInteger(left.value ** right.value);
       case "<":
         return left.value < right.value ? TRUE : FALSE;
       case ">":
@@ -307,17 +344,6 @@ function evalInfix(operator: string, left: LangObject, right: LangObject): LangO
         return left.value <= right.value ? TRUE : FALSE;
       case ">=":
         return left.value >= right.value ? TRUE : FALSE;
-      case "==":
-        return left.value === right.value ? TRUE : FALSE;
-      case "!=":
-        return left.value !== right.value ? TRUE : FALSE;
-      default:
-        break;
-    }
-  }
-
-  if (left instanceof Bool && right instanceof Bool) {
-    switch (operator) {
       case "==":
         return left.value === right.value ? TRUE : FALSE;
       case "!=":
@@ -340,6 +366,8 @@ function evalInfix(operator: string, left: LangObject, right: LangObject): LangO
     }
   }
 
+  // Booleanos, null, arreglos, hashes y quickhacks solo se comparan por identidad.
+  // Como online/offline/null son singletons, para ellos equivale a comparar el valor.
   if (operator === "==") {
     return left === right ? TRUE : FALSE;
   }
@@ -348,9 +376,10 @@ function evalInfix(operator: string, left: LangObject, right: LangObject): LangO
     return left !== right ? TRUE : FALSE;
   }
 
-  return new ErrorObj(`operador no admitido: ${left.type()} ${operator} ${right.type()}`);
+  return new ErrorObj(`el operador '${operator}' no está definido para ${left.type()}`);
 }
 
+// Los number de JS solo representan enteros exactos hasta 2^53; por encima es desbordamiento.
 function checkedInteger(value: number): LangObject {
   if (!Number.isSafeInteger(value)) {
     return new ErrorObj("desbordamiento de entero");
@@ -359,86 +388,79 @@ function checkedInteger(value: number): LangObject {
 }
 
 function evalHash(node: HashLiteral, env: Environment): LangObject {
-  const pairs: Array<{ key: { hashKey: () => any; inspect: () => string }; value: LangObject }> = [];
+  const hash = new HashObj();
 
   for (const [keyNode, valueNode] of node.pairs) {
     const key = Eval(keyNode, env);
     if (isError(key)) {
       return key;
     }
+    if (!isHashable(key)) {
+      return new ErrorObj(`un ${key.type()} no puede ser clave de un hash`);
+    }
+
     const value = Eval(valueNode, env);
     if (isError(value)) {
       return value;
     }
 
-    if (!(key instanceof StringObj || key instanceof Integer || key instanceof Bool)) {
-      return new ErrorObj(`tipo no hashable: ${key.type()}`);
-    }
-
-    pairs.push({ key: key as { hashKey: () => any; inspect: () => string }, value });
+    hash.set(key, value);
   }
 
-  return new HashObj(pairs as Array<{ key: any; value: LangObject }>);
+  return hash;
 }
 
 function evalIndex(left: LangObject, index: LangObject): LangObject {
   if (left instanceof ArrayObj) {
     if (!(index instanceof Integer)) {
-      return new ErrorObj(`índice no válido para arreglo: ${index.type()}`);
+      return new ErrorObj(`el índice de un arreglo debe ser INTEGER, no ${index.type()}`);
     }
     const idx = index.value;
     if (idx < 0 || idx >= left.elements.length) {
-      return new ErrorObj(`índice fuera de rango: ${idx}`);
+      return new ErrorObj(`índice fuera de rango: ${idx} (el arreglo tiene ${left.elements.length} elementos)`);
     }
     return left.elements[idx];
   }
 
   if (left instanceof HashObj) {
-    if (!(index instanceof StringObj || index instanceof Integer || index instanceof Bool)) {
-      return new ErrorObj(`tipo no hashable: ${index.type()}`);
+    if (!isHashable(index)) {
+      return new ErrorObj(`un ${index.type()} no puede ser clave de un hash`);
     }
+    // Una clave que no existe devuelve null (no es un error).
     return left.get(index) ?? NULL;
   }
 
-  return new ErrorObj(`índice no soportado en ${left.type()}`);
+  return new ErrorObj(`no se puede indexar un ${left.type()}`);
 }
 
-function evalWhile(node: WhileExpression, env: Environment): LangObject {
-  let result: LangObject = NULL;
-
+// Ciclo común a netrun y ping: evalúa la condición, ejecuta el cuerpo y, en el ping,
+// la actualización. Los ciclos no producen valor (devuelven null), salvo que dentro
+// ocurra un error o un delta, que se propagan.
+function evalLoop(
+  condition: Expression,
+  body: BlockStatement,
+  update: Expression | null,
+  env: Environment
+): LangObject {
   while (true) {
-    const condition = Eval(node.condition, env);
-    if (isError(condition)) {
-      return condition;
+    const cond = Eval(condition, env);
+    if (isError(cond)) {
+      return cond;
+    }
+    if (!truthy(cond)) {
+      return NULL;
     }
 
-    if (!truthy(condition)) {
-      return result;
-    }
-
-    result = Eval(node.body, env);
+    const result = Eval(body, env);
     if (result instanceof ReturnValue || isError(result)) {
       return result;
     }
-  }
-}
 
-function evalFor(node: ForExpression, env: Environment): LangObject {
-  let result: LangObject = NULL;
-
-  while (true) {
-    const condition = Eval(node.condition, env);
-    if (isError(condition)) {
-      return condition;
-    }
-
-    if (!truthy(condition)) {
-      return result;
-    }
-
-    result = Eval(node.body, env);
-    if (result instanceof ReturnValue || isError(result)) {
-      return result;
+    if (update !== null) {
+      const updated = Eval(update, env);
+      if (isError(updated)) {
+        return updated;
+      }
     }
   }
 }
@@ -449,7 +471,7 @@ function evalExpressions(expressions: Expression[], env: Environment): LangObjec
   for (const expression of expressions) {
     const value = Eval(expression, env);
     if (isError(value)) {
-      return value as ErrorObj;
+      return value;
     }
     results.push(value);
   }
@@ -457,63 +479,46 @@ function evalExpressions(expressions: Expression[], env: Environment): LangObjec
   return results;
 }
 
-function applyFunction(fn: LangObject, args: LangObject[]): LangObject {
+// name: cómo se escribió la función en la llamada, solo para los mensajes de error.
+function applyFunction(fn: LangObject, args: LangObject[], name: string): LangObject {
+  if (!(fn instanceof FunctionObj || fn instanceof BuiltinObj)) {
+    return new ErrorObj(`'${name}' es un ${fn.type()}, no un quickhack: no se puede llamar`);
+  }
+
+  const expected = fn instanceof FunctionObj ? fn.parameters.length : fn.arity;
+  if (expected !== null && args.length !== expected) {
+    return new ErrorObj(`${name} espera ${expected} argumento(s) y recibió ${args.length}`);
+  }
+
   if (fn instanceof BuiltinObj) {
-    return fn.fn(...args);
+    return fn.fn(args);
   }
 
-  if (!(fn instanceof FunctionObj)) {
-    return new ErrorObj(`${fn.type()} no es una función`);
-  }
-
-  if (args.length !== fn.parameters.length) {
-    return new ErrorObj(
-      `cantidad de argumentos incorrecta: se esperaban ${fn.parameters.length}, llegaron ${args.length}`
-    );
-  }
-
-  const local = Environment.enclosed(fn.env);
-
-  for (let i = 0; i < fn.parameters.length; i += 1) {
-    local.set(fn.parameters[i].value, args[i]);
-  }
+  // Ámbito nuevo para esta llamada. Su "outer" es el entorno donde se DEFINIÓ el
+  // quickhack (no donde se llama): por eso un closure recuerda sus variables.
+  const local = new Environment(fn.env);
+  fn.parameters.forEach((param, i) => local.set(param.value, args[i]));
 
   const result = Eval(fn.body, local);
-  if (result instanceof ReturnValue) {
-    return result.value;
-  }
-
-  return result;
+  // Se desenvuelve el ReturnValue aquí; si no, el delta seguiría subiendo
+  // y terminaría también el bloque que hizo la llamada.
+  return result instanceof ReturnValue ? result.value : result;
 }
 
 function evalAssign(node: AssignExpression, env: Environment): LangObject {
-  if (!(node.name instanceof Identifier)) {
-    return new ErrorObj("destino de asignación no admitido");
-  }
-
-  if (!env.has(node.name.value)) {
-    return new ErrorObj(`identificador no definido: ${node.name.value}`);
-  }
-
   const value = Eval(node.value, env);
   if (isError(value)) {
     return value;
   }
 
-  env.assign(node.name.value, value);
+  if (!env.assign(node.name.value, value)) {
+    return new ErrorObj(
+      `no se puede asignar a '${node.name.value}' porque no ha sido declarado; usa choom ${node.name.value} = ...`
+    );
+  }
   return value;
 }
 
-function isError(value: unknown): value is ErrorObj {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    typeof (value as { type: () => string }).type === "function" &&
-    (value as { type: () => string }).type() === ObjectTypes.ERROR
-  );
+export function isError(value: LangObject | LangObject[]): value is ErrorObj {
+  return value instanceof ErrorObj;
 }
-
-export { isError };
-export const evaluate = Eval;
-export default Eval;
