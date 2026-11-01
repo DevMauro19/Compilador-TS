@@ -1,18 +1,18 @@
 {
-  "name": "agentets",
+  "name": "choomscript",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Intérprete de ChoomScript, un lenguaje con temática de Cyberpunk 2077, escrito en TypeScript",
   "scripts": {
-    "test": "node --test --import tsx tests/interpreter.test.ts",
-    "start": "npx tsx repl/repl.ts"
+    "start": "tsx main.ts",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DevMauro19/Compilador-TS.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Carlos Mauricio Velasco Chavarro, Pablo Escudero Vargas, Santiago Pérez Arango",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
