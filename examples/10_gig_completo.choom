@@ -1,0 +1,54 @@
+// =============================================================
+//  10 · Programa completo: el tablero de gigs de un fixer
+//  Combina variables, hashes, arreglos, ciclos, condicionales,
+//  quickhacks, recursión y closures.
+// =============================================================
+
+choom gigs = [
+  {"nombre": "Robar el Flathead", "fixer": "Dex", "pago": 15000, "nivel": 20},
+  {"nombre": "Rescatar a Sandra Dorsett", "fixer": "Regina", "pago": 4000, "nivel": 5},
+  {"nombre": "Infiltrar Konpeki Plaza", "fixer": "Dex", "pago": 50000, "nivel": 35},
+  {"nombre": "Sabotaje en Pacifica", "fixer": "Mr. Hands", "pago": 9000, "nivel": 25}
+];
+
+// Un closure que lleva la cuenta de eddies ganados
+choom crearBilletera = quickhack(inicial) {
+  choom saldo = inicial;
+  delta {
+    "cobrar": quickhack(monto) { saldo = saldo + monto; delta saldo; },
+    "saldo": quickhack() { delta saldo; }
+  };
+};
+
+// Recursión: cuántos gigs puede tomar V con su nivel
+choom contarDisponibles = quickhack(lista, nivelV) {
+  scan (len(lista) == 0) { delta 0; }
+  choom esteCuenta = 0;
+  scan (first(lista)["nivel"] <= nivelV) { esteCuenta = 1; }
+  delta esteCuenta + contarDisponibles(rest(lista), nivelV);
+};
+
+choom nivelV = 25;
+choom billetera = crearBilletera(500);
+
+holo("=== Tablero de gigs · nivel de V: " + str(nivelV) + " ===");
+holo("Gigs disponibles:", contarDisponibles(gigs, nivelV), "de", len(gigs));
+
+ping (choom i = 0; i < len(gigs); i = i + 1) {
+  choom gig = gigs[i];
+  scan (gig["nivel"] <= nivelV) {
+    billetera["cobrar"](gig["pago"]);
+    holo("[OK]  ", gig["nombre"], "para", gig["fixer"], "->", gig["pago"], "eddies");
+  } backdoor {
+    holo("[LOCK]", gig["nombre"], "requiere nivel", gig["nivel"]);
+  }
+}
+
+choom saldoFinal = billetera["saldo"]();
+holo("Saldo final:", saldoFinal, "eddies");
+
+scan (saldoFinal >= 25000) {
+  holo("Preem, choom: alcanza para un Sandevistan nuevo.");
+} backdoor {
+  holo("Faltan eddies; toca seguir haciendo gigs.");
+}

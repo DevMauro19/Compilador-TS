@@ -1,0 +1,41 @@
+// =============================================================
+//  04 · Ciclos: netrun (while) y ping (for)
+// =============================================================
+
+// netrun: repite mientras la condición siga online
+choom ram = 0;
+choom ramMaxima = 8;
+netrun (ram < ramMaxima) {
+  ram = ram + 3;
+  scan (ram > ramMaxima) { ram = ramMaxima; }
+  holo("Recargando RAM:", ram, "/", ramMaxima);
+}
+
+// ping (inicialización; condición; actualización): recorre paso a paso
+choom objetivos = ["cámara", "torreta", "guardia", "dron"];
+ping (choom i = 0; i < len(objetivos); i = i + 1) {
+  holo("Ping al nodo", i, "->", objetivos[i]);
+}
+
+// Ciclos anidados: tabla del breach protocol
+ping (choom fila = 1; fila <= 3; fila = fila + 1) {
+  choom linea = "";
+  ping (choom col = 1; col <= 3; col = col + 1) {
+    linea = linea + str(fila * col) + " ";
+  }
+  holo(linea);
+}
+
+// delta dentro de un ciclo sale del quickhack completo
+choom primerHostil = quickhack(lista) {
+  ping (choom i = 0; i < len(lista); i = i + 1) {
+    scan (lista[i]["hostil"]) { delta lista[i]["nombre"]; }
+  }
+  delta "ninguno";
+};
+choom zona = [
+  {"nombre": "vendedor", "hostil": offline},
+  {"nombre": "Tyger Claw", "hostil": online},
+  {"nombre": "Valentino", "hostil": online}
+];
+holo("Primer hostil detectado:", primerHostil(zona));

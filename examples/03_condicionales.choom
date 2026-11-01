@@ -1,0 +1,36 @@
+// =============================================================
+//  03 · Condicionales: scan / backdoor scan / backdoor
+//  scan = if, backdoor = else, backdoor scan = else if
+// =============================================================
+
+choom nivelDeAmenaza = quickhack(nivelEnemigo, nivelV) {
+  choom diferencia = nivelEnemigo - nivelV;
+  scan (diferencia >= 10) {
+    delta "CALAVERA: ni lo intentes, choom";
+  } backdoor scan (diferencia >= 3) {
+    delta "ALTO: mejor usa sigilo";
+  } backdoor scan (diferencia >= -3) {
+    delta "MEDIO: pelea pareja";
+  } backdoor {
+    delta "BAJO: pan comido";
+  }
+};
+
+holo("Adam Smasher:", nivelDeAmenaza(60, 30));
+holo("Ciberpsicópata:", nivelDeAmenaza(35, 30));
+holo("Pandillero de Maelstrom:", nivelDeAmenaza(28, 30));
+holo("Scav cualquiera:", nivelDeAmenaza(10, 30));
+
+// Condicionales anidados
+choom tieneCyberdeck = online;
+choom ram = 2;
+
+scan (tieneCyberdeck) {
+  scan (ram >= 4) {
+    holo("Subiendo Short Circuit...");
+  } backdoor {
+    holo("RAM insuficiente: espera a que se recargue");
+  }
+} backdoor {
+  holo("Sin cyberdeck no hay quickhacks");
+}

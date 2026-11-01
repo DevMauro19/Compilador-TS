@@ -1,0 +1,42 @@
+// =============================================================
+//  06 · Ámbitos: variables locales y globales
+//  Solo los quickhacks crean un ámbito nuevo. Los bloques de
+//  scan, netrun y ping comparten el ámbito donde están escritos.
+// =============================================================
+
+choom objetivo = "Arasaka Tower";   // global
+
+// choom dentro de un quickhack crea una variable LOCAL que tapa a la global
+choom misionSecundaria = quickhack() {
+  choom objetivo = "Konpeki Plaza";  // local: la global no cambia
+  delta objetivo;
+};
+holo("Misión secundaria:", misionSecundaria());
+holo("Objetivo global sigue siendo:", objetivo);
+
+// Un parámetro con el mismo nombre también tapa a la global
+choom infiltrar = quickhack(objetivo) {
+  delta "Infiltrando " + objetivo;
+};
+holo(infiltrar("Militech"));
+holo("Y el global:", objetivo);
+
+// Sin choom, la asignación modifica la variable del ámbito donde fue declarada
+choom reputacion = 0;
+choom completarGig = quickhack(puntos) {
+  reputacion = reputacion + puntos;   // modifica la global
+};
+completarGig(10);
+completarGig(25);
+holo("Reputación callejera:", reputacion);
+
+// Ámbitos anidados: cada llamada tiene su propio ámbito
+choom exterior = quickhack() {
+  choom capa = "exterior";
+  choom interior = quickhack() {
+    choom capa = "interior";
+    delta capa;
+  };
+  delta interior() + " / " + capa;
+};
+holo("Capas:", exterior());

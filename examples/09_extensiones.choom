@@ -1,0 +1,65 @@
+// =============================================================
+//  09 · Extensiones: closures, funciones de orden superior
+//       y evaluación en cortocircuito
+// =============================================================
+
+// --- Closures -------------------------------------------------
+// El quickhack devuelto recuerda "usos" aunque crearImplante ya terminó,
+// porque guarda el ámbito donde fue definido.
+choom crearImplante = quickhack(nombre, cargas) {
+  choom usos = 0;
+  delta quickhack() {
+    scan (usos >= cargas) { delta nombre + ": sin cargas, choom"; }
+    usos = usos + 1;
+    delta nombre + " activado (" + str(usos) + "/" + str(cargas) + ")";
+  };
+};
+choom sandevistan = crearImplante("Sandevistan", 2);
+choom kerenzikov = crearImplante("Kerenzikov", 1);
+holo(sandevistan());
+holo(kerenzikov());
+holo(sandevistan());
+holo(sandevistan());
+holo(kerenzikov());
+
+// --- Funciones de orden superior ------------------------------
+// mapear, filtrar y reducir reciben otro quickhack como parámetro
+choom mapear = quickhack(lista, f) {
+  choom salida = [];
+  ping (choom i = 0; i < len(lista); i = i + 1) { salida = push(salida, f(lista[i])); }
+  delta salida;
+};
+choom filtrar = quickhack(lista, condicion) {
+  choom salida = [];
+  ping (choom i = 0; i < len(lista); i = i + 1) {
+    scan (condicion(lista[i])) { salida = push(salida, lista[i]); }
+  }
+  delta salida;
+};
+choom reducir = quickhack(lista, f, inicial) {
+  choom acumulado = inicial;
+  ping (choom i = 0; i < len(lista); i = i + 1) { acumulado = f(acumulado, lista[i]); }
+  delta acumulado;
+};
+
+choom pagos = [500, 12000, 3000, 800, 25000];
+holo("Pagos con comisión del fixer:", mapear(pagos, quickhack(p) { p - p / 10 }));
+holo("Gigs grandes:", filtrar(pagos, quickhack(p) { p >= 3000 }));
+holo("Total:", reducir(pagos, quickhack(acc, p) { acc + p }, 0), "eddies");
+
+// Un quickhack que devuelve otro quickhack
+choom multiplicarPor = quickhack(factor) { quickhack(x) { x * factor } };
+choom triple = multiplicarPor(3);
+holo("Triple de 7:", triple(7));
+
+// --- Cortocircuito --------------------------------------------
+// Con offline && ..., el lado derecho ni se evalúa (no se llama a alarma).
+choom alarmas = 0;
+choom alarma = quickhack() { alarmas = alarmas + 1; delta online; };
+offline && alarma();
+online || alarma();
+holo("Alarmas disparadas:", alarmas);
+
+// Útil para proteger un acceso: si la lista está vacía no se lee lista[0]
+choom lista = [];
+holo("¿Primer elemento es 5?", len(lista) > 0 && lista[0] == 5);

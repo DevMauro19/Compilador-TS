@@ -1,0 +1,40 @@
+// =============================================================
+//  05 · Funciones: quickhack, parámetros, delta y recursión
+// =============================================================
+
+// Definición con parámetros y valor de retorno (delta)
+choom daño = quickhack(base, multiplicador) {
+  delta base * multiplicador;
+};
+holo("Daño de Short Circuit:", daño(120, 3));
+
+// Si no hay delta, se devuelve el valor de la última expresión del cuerpo
+choom costoRam = quickhack(nivel) { nivel + 2 };
+holo("Costo en RAM de un quickhack nivel 4:", costoRam(4));
+
+// Un quickhack sin parámetros
+choom despertar = quickhack() { delta "Wake up, Samurai. We have a city to burn."; };
+holo(despertar());
+
+// Recursión: factorial
+choom factorial = quickhack(n) {
+  scan (n <= 1) { delta 1; }
+  delta n * factorial(n - 1);
+};
+holo("10! =", factorial(10));
+
+// Recursión: Fibonacci
+choom fib = quickhack(n) {
+  scan (n < 2) { delta n; }
+  delta fib(n - 1) + fib(n - 2);
+};
+choom serie = [];
+ping (choom i = 0; i < 12; i = i + 1) { serie = push(serie, fib(i)); }
+holo("Fibonacci:", serie);
+
+// Recursión sobre arreglos: suma de todos los pagos
+choom sumar = quickhack(lista) {
+  scan (len(lista) == 0) { delta 0; }
+  delta first(lista) + sumar(rest(lista));
+};
+holo("Total de pagos:", sumar([1500, 3000, 750, 12000]), "eddies");

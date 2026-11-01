@@ -1,0 +1,35 @@
+// =============================================================
+//  07 · Estructuras de datos: arreglos y hashes
+// =============================================================
+
+// Arreglos: se indexan desde 0
+choom implantes = ["Kiroshi Optics", "Sandevistan", "Gorilla Arms"];
+holo("Implantes:", implantes);
+holo("El primero:", implantes[0], "| Cantidad:", len(implantes));
+
+// push devuelve un arreglo NUEVO; el original no se modifica
+choom mejorados = push(implantes, "Mantis Blades");
+holo("Antes:", len(implantes), "| Después:", len(mejorados));
+holo("first / last / rest:", first(mejorados), "/", last(mejorados), "/", rest(mejorados));
+
+// Hashes: claves de tipo cadena, entero o booleano
+choom fixer = {
+  "nombre": "Rogue",
+  "bar": "Afterlife",
+  "gigsDisponibles": 3,
+  "confiable": online
+};
+holo("Fixer:", fixer["nombre"], "en el", fixer["bar"]);
+holo("Clave inexistente devuelve:", fixer["telefono"]);
+
+// Estructuras anidadas: arreglo de hashes
+choom equipo = [
+  {"alias": "V", "rol": "merc", "nivel": 50},
+  {"alias": "Judy", "rol": "técnica de BD", "nivel": 40},
+  {"alias": "Panam", "rol": "nómada", "nivel": 45}
+];
+ping (choom i = 0; i < len(equipo); i = i + 1) {
+  choom choomba = equipo[i];
+  holo(choomba["alias"], "->", choomba["rol"], "(nivel " + str(choomba["nivel"]) + ")");
+}
+holo("Rol del segundo miembro:", equipo[1]["rol"]);

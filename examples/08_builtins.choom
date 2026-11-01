@@ -1,0 +1,26 @@
+// =============================================================
+//  08 · Funciones integradas
+//  holo  len  first  last  rest  push  str  int  type
+// =============================================================
+
+// holo: imprime uno o varios valores separados por espacio
+holo("Mensaje entrante de", "Takemura", 1, online);
+
+// len: arreglos, hashes y cadenas
+holo("len:", len([1, 2, 3]), len({"a": 1, "b": 2}), len("Night City"));
+
+// first, last, rest, push: arreglos
+choom gigs = ["robo", "rescate", "sabotaje"];
+holo("first:", first(gigs), "| last:", last(gigs), "| rest:", rest(gigs));
+holo("push:", push(gigs, "escolta"));
+
+// str: cualquier valor a cadena
+holo("str: " + str(2077) + " / " + str(online) + " / " + str([1, 2]));
+
+// int: cadena numérica o booleano a entero
+choom eddiesTexto = "1500";
+holo("int:", int(eddiesTexto) + 500, int(online), int(offline));
+
+// type: el tipo de un valor
+holo("type:", type(42), type("V"), type(offline), type([]), type({}));
+holo("type:", type(quickhack() { 1 }), type(holo), type(first([])));

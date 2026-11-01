@@ -1,0 +1,26 @@
+// =============================================================
+//  01 · Variables y asignación
+//  choom declara una variable; "=" cambia el valor de una que ya existe.
+// =============================================================
+
+choom nombre = "V";
+choom origen = "Nómada";
+choom eddies = 2500;
+choom tieneRelic = online;
+
+holo("Merc:", nombre, "| Origen:", origen);
+holo("Eddies:", eddies, "| Relic instalado:", tieneRelic);
+
+// Reasignación: la variable ya existe, así que no se usa choom
+eddies = eddies - 800;
+holo("Después de pagarle al ripperdoc quedan", eddies, "eddies");
+
+// Los nombres pueden llevar tildes y ñ
+choom año = 2077;
+holo("Año:", año);
+
+// La asignación también es una expresión: a = b = 0 asigna a ambas
+choom misionesHechas = 3;
+choom misionesFallidas = 1;
+misionesHechas = misionesFallidas = 0;
+holo("Contadores reiniciados:", misionesHechas, misionesFallidas);

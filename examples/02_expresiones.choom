@@ -1,0 +1,26 @@
+// =============================================================
+//  02 · Expresiones: aritméticas, relacionales y lógicas
+//  Precedencia (de menor a mayor):
+//    =   ||   &&   == !=   < > <= >=   + -   * / %   -x !x   **   llamada   índice
+// =============================================================
+
+// Aritmética entera
+holo("2 + 3 * 4       =", 2 + 3 * 4);        // 14: * antes que +
+holo("(2 + 3) * 4     =", (2 + 3) * 4);      // 20: los paréntesis mandan
+holo("20 - 5 - 3      =", 20 - 5 - 3);       // 12: asociativa a la izquierda
+holo("2 ** 3 ** 2     =", 2 ** 3 ** 2);      // 512: ** es asociativa a la derecha
+holo("-2 ** 2         =", -2 ** 2);          // -4: ** amarra más que el - unario
+holo("17 / 5, 17 % 5  =", 17 / 5, 17 % 5);   // división entera y residuo
+
+// Relacionales
+choom ram = 6;
+holo("ram > 4 :", ram > 4, "| ram == 6 :", ram == 6, "| ram != 6 :", ram != 6);
+
+// Lógicas: && tiene más precedencia que ||
+choom tieneCyberdeck = online;
+choom estaEnCombate = offline;
+holo("Puede hackear:", tieneCyberdeck && ram >= 4 && !estaEnCombate);
+holo("online || offline && offline =", online || offline && offline);
+
+// Cadenas: + concatena; str() convierte números a texto
+holo("Night" + " " + "City, " + str(2077));
