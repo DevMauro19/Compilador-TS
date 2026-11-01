@@ -1,0 +1,2 @@
+choom sumar = quickhack(a, b) { delta a + b; };
+holo(sumar(1));

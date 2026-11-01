@@ -1,0 +1,7 @@
+// El error apunta a la línea dentro del quickhack donde ocurrió
+choom repartir = quickhack(total, chooms) {
+  delta total / chooms;
+};
+holo(repartir(100, 4));
+holo(repartir(100, 0));
+holo("Esto ya no se imprime");

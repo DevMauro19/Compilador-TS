@@ -1,0 +1,20 @@
+// Arreglos
+choom bandas = ["Maelstrom", "Valentinos", "Tyger Claws"];
+holo(bandas);
+holo(bandas[0], len(bandas));
+holo(first(bandas), last(bandas));
+holo(rest(bandas));
+
+// push devuelve un arreglo nuevo: el original no cambia
+choom todas = push(bandas, "Voodoo Boys");
+holo(len(bandas), len(todas));
+
+// Hashes
+choom merc = {"nombre": "V", "nivel": 50, "vivo": online};
+holo(merc);
+holo(merc["nombre"], merc["nivel"]);
+holo(merc["no existe"]);
+
+// Estructuras anidadas
+choom red = {"nodos": [1, 2, 3], "admin": {"usuario": "Alt"}};
+holo(red["nodos"][2], red["admin"]["usuario"]);

@@ -1,0 +1,5 @@
+// Sin caso base, el quickhack se llama a sí mismo para siempre
+choom cyberpsicosis = quickhack(n) {
+  delta cyberpsicosis(n + 1);
+};
+cyberpsicosis(0);

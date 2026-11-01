@@ -1,0 +1,5 @@
+holo("Esto no se imprime: con un error sintáctico el programa no se ejecuta");
+choom vida = 100;
+scan (vida > 50 {
+  holo("preem");
+}

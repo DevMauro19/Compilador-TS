@@ -1,0 +1,11 @@
+// Precedencia y asociatividad de operadores aritméticos, relacionales y lógicos
+holo(2 + 3 * 4);
+holo((2 + 3) * 4);
+holo(10 - 4 - 3);
+holo(2 ** 3 ** 2);
+holo(-2 ** 2);
+holo(17 / 5, 17 % 5);
+holo(3 < 5, 3 >= 5, 3 == 3, 3 != 3);
+holo(online && offline || online);
+holo(!online, !offline);
+holo("Night" + " " + "City");

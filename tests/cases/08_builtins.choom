@@ -1,0 +1,7 @@
+holo("holo imprime", 1, online, [1, 2]);
+holo(len("choom"), len([1, 2]), len({"a": 1}));
+holo(str(2077) + " Night City");
+holo(int("42") + 8);
+holo(int(online), int(offline));
+holo(type(1), type("a"), type(online), type([]), type({}));
+holo(type(quickhack() { 1 }), type(holo));

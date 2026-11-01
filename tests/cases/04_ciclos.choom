@@ -1,0 +1,22 @@
+// netrun: repite mientras la condición esté online
+choom ram = 3;
+netrun (ram > 0) {
+  ram = ram - 1;
+  holo("Quickhack subido, RAM restante:", ram);
+}
+
+// ping: inicialización; condición; actualización
+choom total = 0;
+ping (choom i = 1; i <= 5; i = i + 1) {
+  total = total + i;
+}
+holo("Suma 1..5:", total);
+
+// Ciclos anidados
+ping (choom fila = 1; fila <= 3; fila = fila + 1) {
+  choom linea = "";
+  ping (choom col = 1; col <= fila; col = col + 1) {
+    linea = linea + "*";
+  }
+  holo(linea);
+}

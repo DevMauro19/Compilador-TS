@@ -1,0 +1,2 @@
+choom eddies = 100;
+choom precio = eddies @ 2;

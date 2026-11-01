@@ -1,0 +1,4 @@
+// No hay conversiones implícitas: para unir texto y número se usa str()
+choom eddies = 500;
+holo("Tienes " + str(eddies));
+holo("Tienes " + eddies);

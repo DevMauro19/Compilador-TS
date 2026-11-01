@@ -1,0 +1,14 @@
+// Declaración con choom, consulta y reasignación
+choom nombre = "V";
+choom eddies = 1500;
+choom implante = online;
+holo(nombre, eddies, implante);
+
+eddies = eddies - 500;
+holo("Después del ripperdoc:", eddies);
+
+// La asignación es asociativa a la derecha: a = (b = 7)
+choom a = 1;
+choom b = 2;
+a = b = 7;
+holo(a, b);

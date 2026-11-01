@@ -1,0 +1,23 @@
+choom x = "global";
+
+// choom dentro de un quickhack declara una x nueva que tapa a la global
+choom tapar = quickhack() {
+  choom x = "local";
+  delta x;
+};
+holo(tapar(), x);
+
+// Un parámetro también tapa a la global
+choom parametro = quickhack(x) { delta x; };
+holo(parametro("parámetro"), x);
+
+// Asignar sin choom modifica la variable del ámbito donde fue declarada
+choom contador = 0;
+choom incrementar = quickhack() { contador = contador + 1; };
+incrementar();
+incrementar();
+holo("contador:", contador);
+
+// Los bloques de scan, netrun y ping NO crean ámbito: solo los quickhacks
+scan (online) { choom dentroDelScan = "visible"; }
+holo(dentroDelScan);

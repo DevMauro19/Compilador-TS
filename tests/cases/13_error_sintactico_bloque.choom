@@ -1,0 +1,4 @@
+choom hackear = quickhack(objetivo) {
+  holo("Subiendo quickhack a", objetivo);
+
+hackear("torreta");

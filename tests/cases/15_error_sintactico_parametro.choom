@@ -1,0 +1,3 @@
+choom reiniciar = quickhack(objetivo, 3) {
+  delta objetivo;
+};

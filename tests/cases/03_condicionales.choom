@@ -1,0 +1,26 @@
+// scan / backdoor scan / backdoor
+choom clasificar = quickhack(eddies) {
+  scan (eddies >= 10000) {
+    delta "corpo";
+  } backdoor scan (eddies >= 1000) {
+    delta "merc";
+  } backdoor {
+    delta "streetkid";
+  }
+};
+holo(clasificar(50000));
+holo(clasificar(2000));
+holo(clasificar(10));
+
+// Condicionales anidados
+choom nivel = 7;
+choom tieneCyberdeck = online;
+scan (nivel > 5) {
+  scan (tieneCyberdeck) {
+    holo("Listo para el netrun");
+  } backdoor {
+    holo("Consigue un cyberdeck primero");
+  }
+} backdoor {
+  holo("Sube de nivel, choom");
+}

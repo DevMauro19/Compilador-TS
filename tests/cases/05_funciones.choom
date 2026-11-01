@@ -1,0 +1,26 @@
+// Definición, parámetros y valor de retorno
+choom sumar = quickhack(a, b) {
+  delta a + b;
+};
+holo(sumar(2, 3));
+
+// Sin delta, el quickhack devuelve el valor de su última expresión
+choom doble = quickhack(x) { x * 2 };
+holo(doble(21));
+
+// Recursión
+choom factorial = quickhack(n) {
+  scan (n <= 1) { delta 1; }
+  delta n * factorial(n - 1);
+};
+holo(factorial(10));
+
+choom fib = quickhack(n) {
+  scan (n < 2) { delta n; }
+  delta fib(n - 1) + fib(n - 2);
+};
+holo(fib(20));
+
+// Sin parámetros
+choom despertar = quickhack() { delta "Wake up, Samurai"; };
+holo(despertar());

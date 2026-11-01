@@ -1,0 +1,20 @@
+// Closures: el quickhack interno recuerda "cuenta" aunque crearContador ya terminó
+choom crearContador = quickhack() {
+  choom cuenta = 0;
+  delta quickhack() {
+    cuenta = cuenta + 1;
+    delta cuenta;
+  };
+};
+choom contador = crearContador();
+contador();
+contador();
+holo("closure:", contador());
+
+// Funciones de orden superior: un quickhack que recibe otro quickhack
+choom aplicarDosVeces = quickhack(f, x) { delta f(f(x)); };
+holo("orden superior:", aplicarDosVeces(quickhack(n) { n * 3 }, 2));
+
+// Cortocircuito: si el lado izquierdo ya decide, el derecho no se evalúa
+choom alarma = quickhack() { holo("esto no debería imprimirse"); delta online; };
+holo("cortocircuito:", offline && alarma(), online || alarma());
