@@ -1,3 +1,8 @@
+// ast/ast.ts
+// Nodos del árbol de sintaxis abstracta (AST) que construye el parser y recorre el evaluador.
+// Cada nodo guarda el token que lo originó: de ahí salen la línea y la columna de los errores.
+// toString() reconstruye el código con paréntesis explícitos; los tests lo usan para
+// comprobar la precedencia (por ejemplo "1 + 2 * 3" → "(1 + (2 * 3))").
 import { Token } from "../token/token.ts";
 
 // ---------- Interfaces base ----------
@@ -6,16 +11,20 @@ export interface Node {
   toString(): string;
 }
 
-// Los campos "marcadores" cumplen el mismo rol que statementNode()/expressionNode()
+// El campo "kind" cumple el mismo rol que statementNode()/expressionNode() en Go:
+// impide que el compilador de TS confunda una sentencia con una expresión.
 export interface Statement extends Node {
   readonly kind: "statement";
+  readonly token: Token;
 }
 
 export interface Expression extends Node {
   readonly kind: "expression";
+  readonly token: Token;
 }
 
 // ---------- Program ----------
+// Raíz del árbol: la lista de sentencias del archivo o de la línea del REPL.
 export class Program implements Node {
   statements: Statement[] = [];
 
@@ -29,41 +38,38 @@ export class Program implements Node {
 }
 
 // ---------- Sentencias ----------
+// choom <nombre> = <valor>;
 export class LetStatement implements Statement {
   readonly kind = "statement" as const;
   constructor(
     public token: Token,
     public name: Identifier,
-    public value: Expression | null = null
+    public value: Expression
   ) {}
 
   tokenLiteral() { return this.token.literal; }
-
-  toString(): string {
-    const val = this.value ? this.value.toString() : "";
-    return `${this.tokenLiteral()} ${this.name} = ${val};`;
-  }
+  toString() { return `${this.tokenLiteral()} ${this.name} = ${this.value};`; }
 }
 
+// delta <valor>;
 export class ReturnStatement implements Statement {
   readonly kind = "statement" as const;
-  constructor(public token: Token, public returnValue: Expression | null = null) {}
+  constructor(public token: Token, public returnValue: Expression) {}
 
   tokenLiteral() { return this.token.literal; }
-
-  toString(): string {
-    return `${this.tokenLiteral()} ${this.returnValue?.toString() ?? ""};`;
-  }
+  toString() { return `${this.tokenLiteral()} ${this.returnValue};`; }
 }
 
+// Una expresión usada como sentencia, por ejemplo "holo(x);" o "x = x + 1;".
 export class ExpressionStatement implements Statement {
   readonly kind = "statement" as const;
-  constructor(public token: Token, public expression: Expression | null = null) {}
+  constructor(public token: Token, public expression: Expression) {}
 
   tokenLiteral() { return this.token.literal; }
-  toString() { return this.expression?.toString() ?? ""; }
+  toString() { return this.expression.toString(); }
 }
 
+// { sentencia* }: cuerpo de scan, backdoor, netrun, ping y quickhack.
 export class BlockStatement implements Statement {
   readonly kind = "statement" as const;
   constructor(public token: Token, public statements: Statement[] = []) {}
@@ -83,13 +89,14 @@ export class Identifier implements Expression {
 
 export class IntegerLiteral implements Expression {
   readonly kind = "expression" as const;
-  // number pierde precisión por encima de 2^53; usa bigint si lo necesitas
+  // number pierde precisión por encima de 2^53; el parser rechaza enteros más grandes
   constructor(public token: Token, public value: number) {}
 
   tokenLiteral() { return this.token.literal; }
   toString() { return this.token.literal; }
 }
 
+// online / offline
 export class BooleanLiteral implements Expression {
   readonly kind = "expression" as const;
   constructor(public token: Token, public value: boolean) {}
@@ -106,6 +113,7 @@ export class StringLiteral implements Expression {
   toString() { return `"${this.value}"`; }
 }
 
+// [a, b, c]
 export class ArrayLiteral implements Expression {
   readonly kind = "expression" as const;
   constructor(public token: Token, public elements: Expression[] = []) {}
@@ -114,6 +122,7 @@ export class ArrayLiteral implements Expression {
   toString() { return `[${this.elements.map((e) => e.toString()).join(", ")}]`; }
 }
 
+// {clave: valor, ...}
 export class HashLiteral implements Expression {
   readonly kind = "expression" as const;
   constructor(public token: Token, public pairs: Array<[Expression, Expression]> = []) {}
@@ -127,43 +136,47 @@ export class HashLiteral implements Expression {
 }
 
 // ---------- Operadores ----------
+// izquierda <operador> derecha. También representa && y ||, que el evaluador trata en cortocircuito.
 export class InfixExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
     public token: Token,
     public left: Expression,
     public operator: string,
-    public right: Expression | null = null
+    public right: Expression
   ) {}
 
   tokenLiteral() { return this.token.literal; }
   toString() { return `(${this.left} ${this.operator} ${this.right})`; }
 }
 
+// -x  o  !x
 export class PrefixExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
     public token: Token,
     public operator: string,
-    public right: Expression | null = null
+    public right: Expression
   ) {}
 
   tokenLiteral() { return this.token.literal; }
   toString() { return `(${this.operator}${this.right})`; }
 }
 
+// nombre = valor (sobre una variable ya declarada con choom)
 export class AssignExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
     public token: Token,
     public name: Identifier,
-    public value: Expression | null = null
+    public value: Expression
   ) {}
 
   tokenLiteral() { return this.token.literal; }
   toString() { return `(${this.name} = ${this.value})`; }
 }
 
+// coleccion[indice]
 export class IndexExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
@@ -177,6 +190,8 @@ export class IndexExpression implements Expression {
 }
 
 // ---------- Control de flujo ----------
+// scan (condición) { ... } backdoor { ... }
+// Un "backdoor scan" se guarda como un IfExpression dentro del bloque alternativo.
 export class IfExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
@@ -188,12 +203,13 @@ export class IfExpression implements Expression {
 
   tokenLiteral() { return this.token.literal; }
   toString() {
-    let out = `if${this.condition} ${this.consequence}`;
-    if (this.alternative) out += ` else ${this.alternative}`;
+    let out = `${this.tokenLiteral()}${this.condition} ${this.consequence}`;
+    if (this.alternative) out += ` backdoor ${this.alternative}`;
     return out;
   }
 }
 
+// netrun (condición) { ... }
 export class WhileExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
@@ -203,22 +219,29 @@ export class WhileExpression implements Expression {
   ) {}
 
   tokenLiteral() { return this.token.literal; }
-  toString() { return `while${this.condition} ${this.body}`; }
+  toString() { return `${this.tokenLiteral()}${this.condition} ${this.body}`; }
 }
 
+// ping (inicialización; condición; actualización) { ... }
 export class ForExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
     public token: Token,
+    public init: LetStatement | ExpressionStatement,
     public condition: Expression,
+    public update: Expression,
     public body: BlockStatement
   ) {}
 
   tokenLiteral() { return this.token.literal; }
-  toString() { return `for${this.condition} ${this.body}`; }
+  toString() {
+    const init = this.init.toString().replace(/;$/, "");
+    return `${this.tokenLiteral()}(${init}; ${this.condition}; ${this.update}) ${this.body}`;
+  }
 }
 
 // ---------- Funciones ----------
+// quickhack(parámetros) { cuerpo }
 export class FunctionLiteral implements Expression {
   readonly kind = "expression" as const;
   constructor(
@@ -234,6 +257,7 @@ export class FunctionLiteral implements Expression {
   }
 }
 
+// funcion(argumentos)
 export class CallExpression implements Expression {
   readonly kind = "expression" as const;
   constructor(
