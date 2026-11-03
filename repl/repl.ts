@@ -7,7 +7,7 @@ import { TokenTypes } from "../token/token.ts";
 import { interpret } from "../interpreter/interpreter.ts";
 import { Environment, NULL } from "../object/object.ts";
 
-const PROMPT = "choom> ";
+const PROMPT = "V here> ";
 const CONTINUATION_PROMPT = "  ...> ";
 const EXIT_COMMAND = "jackout";
 

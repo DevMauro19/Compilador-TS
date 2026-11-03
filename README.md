@@ -45,12 +45,12 @@ También se puede ejecutar sin npm: `npx tsx main.ts archivo.choom`.
 En el **REPL** las variables se conservan entre líneas. Si una línea deja `(`, `[` o `{` sin cerrar, el REPL sigue leyendo (`...>`) hasta que se cierren, así se pueden escribir quickhacks de varias líneas. Para salir: `jackout` o `Ctrl+C`.
 
 ```text
-choom> choom doble = quickhack(x) {
+V here> choom doble = quickhack(x) {
   ...>   x * 2
   ...> };
-choom> doble(21)
+V here> doble(21)
 42
-choom> jackout
+V here> jackout
 Jacked out. Nos vemos en el Afterlife, choom.
 ```
 
